@@ -1,13 +1,11 @@
 import { useEffect, useState } from "react";
 import API from "../services/api";
 import ProductCard from "../components/ProductCard";
-import "./Home.css"; // 👈 Importamos los estilos
+import "./Home.css";
 
 function Home() {
   const [products, setProducts] = useState([]);
   const [cart, setCart] = useState([]);
-  const [qr, setQr] = useState("");
-  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     API.get("/productos")
@@ -17,40 +15,56 @@ function Home() {
 
   const addToCart = (product) => {
     const existe = cart.find(p => p.id_producto === product.id_producto);
+
     if (existe) {
-      setCart(cart.map(p => p.id_producto === product.id_producto ? { ...p, qty: p.qty + 1 } : p));
+      setCart(
+        cart.map(p =>
+          p.id_producto === product.id_producto
+            ? { ...p, qty: p.qty + 1 }
+            : p
+        )
+      );
     } else {
       setCart([...cart, { ...product, qty: 1 }]);
     }
   };
 
   const increaseQty = (id) => {
-    setCart(cart.map(item => item.id_producto === id ? { ...item, qty: item.qty + 1 } : item));
+    setCart(
+      cart.map(item =>
+        item.id_producto === id
+          ? { ...item, qty: item.qty + 1 }
+          : item
+      )
+    );
   };
 
   const decreaseQty = (id) => {
-    setCart(cart.map(item => item.id_producto === id ? { ...item, qty: item.qty - 1 } : item).filter(item => item.qty > 0));
+    setCart(
+      cart
+        .map(item =>
+          item.id_producto === id
+            ? { ...item, qty: item.qty - 1 }
+            : item
+        )
+        .filter(item => item.qty > 0)
+    );
   };
 
-  const total = cart.reduce((acc, item) => acc + Number(item.precio) * item.qty, 0);
-
-  const generarQR = async () => {
-    try {
-      const res = await API.get(`/qr/${total}`);
-      setQr(res.data.qr);
-      setShowQR(true);
-    } catch (error) {
-      console.log(error);
-    }
-  };
+  const total = cart.reduce(
+    (acc, item) => acc + Number(item.precio) * item.qty,
+    0
+  );
 
   const confirmarPago = async () => {
     try {
-      await API.post("/confirmar-pago", { carrito: cart, id_cliente: 1 });
+      await API.post("/confirmar-pago", {
+        carrito: cart,
+        id_cliente: 1
+      });
+
       alert("✅ Pago registrado correctamente");
       setCart([]);
-      setShowQR(false);
-      setQr("");
     } catch (error) {
       alert("❌ Error al guardar");
     }
@@ -58,9 +72,11 @@ function Home() {
 
   return (
     <div className="home-container">
-      {/* SECCIÓN IZQUIERDA: PRODUCTOS */}
+
+      {/* PRODUCTOS */}
       <section className="products-section">
-        <h1>Explora nuestros productos</h1>
+        <h1>Productos</h1>
+
         <div className="products-grid">
           {products.map(product => (
             <ProductCard
@@ -72,50 +88,45 @@ function Home() {
         </div>
       </section>
 
-      {/* SECCIÓN DERECHA: CARRITO */}
+      {/* CARRITO */}
       <aside className="cart-section">
-        <h2>Tu Carrito 🛒</h2>
-        
+        <h2>Carrito 🛒</h2>
+
         {cart.length === 0 ? (
-          <p style={{ textAlign: "center", color: "#999" }}>No hay productos aún.</p>
+          <p>No hay productos</p>
         ) : (
           cart.map(item => (
-            <div key={item.id_producto} className="cart-item">
+            <div key={item.id_producto}>
               <strong>{item.descripcion}</strong>
-              <div className="cart-item-actions">
-                <span>S/ {item.precio}</span>
-                <button className="btn-qty" onClick={() => decreaseQty(item.id_producto)}>-</button>
-                <span>{item.qty}</span>
-                <button className="btn-qty" onClick={() => increaseQty(item.id_producto)}>+</button>
+              <div>
+                S/ {item.precio} x {item.qty}
+                <button onClick={() => decreaseQty(item.id_producto)}>-</button>
+                <button onClick={() => increaseQty(item.id_producto)}>+</button>
               </div>
             </div>
           ))
         )}
 
-        <div className="total-display">
-          Total: S/ {total.toFixed(2)}
-        </div>
+        <h3>Total: S/ {total.toFixed(2)}</h3>
 
         {cart.length > 0 && (
-          <button className="btn-pay" onClick={generarQR}>
-            Pagar con Yape
+          <button onClick={confirmarPago}>
+            Confirmar pago
           </button>
         )}
 
-        {showQR && (
-          <div className="qr-container">
-            <h3>Escanea el QR</h3>
+        {/* QR IMAGEN FIJA */}
+        {cart.length > 0 && (
+          <div>
+            <h3>Paga con Yape</h3>
             <img 
               src="../../img/qr-yape.png" 
               alt="QR Yape" 
               width={180} 
-              className="qr-image" 
             />
-            <button className="btn-confirm" onClick={confirmarPago}>
-              Ya pagué, confirmar
-            </button>
           </div>
         )}
+
       </aside>
     </div>
   );
